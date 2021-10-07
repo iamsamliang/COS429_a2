@@ -14,11 +14,19 @@ def extract_sift(img, step_size=1):
         img: Grayscale image of shape (H, W)
         step_size: Size of the step between keypoints
     """
-    sift = cv2.SIFT_create() # or cv2.xfeatures2d.SIFT_create()
+    sift = cv2.xfeatures2d.SIFT_create()
 
-    keypoints = None # YOUR CODE
-    descriptors = None # YOUR CODE
-
+    # Take each pixel starting from (0,0) as a keypoint and separate pixels to be step_size apart horizontally
+    # Do we want them to be step_size apart vertically? Yes, bc each keypoint has a radius to it so we don't want them
+    # to overlap
+    dense_keypoints = []
+    for x in range(img.shape[0]):
+        for y in range(img.shape[1]):
+            dense_keypoints.append(cv2.KeyPoint(x, y, step_size))
+            
+    # returns a tuple where the N x 128 descriptor is the second element. First element is some hex of the keypoints (unsure what)
+    descriptors = sift.compute(img, dense_keypoints)[1]
+    
     return descriptors
 
 
