@@ -61,20 +61,46 @@ def spatial_pyramid_matching(L, feature, centroids):
     ### We provided rough guidelines but you don't have to follow them ###
 
     # For each level from 0, 1, ..., L
-
+    concat_hist = []
+    
+    for l in range(L + 1):
         # For each block
-
-                # Grab features in the given block
-
-                # Compute histogram of features within the block
-
-                # Calculate the weight
-
-                # Append the weighted histogram
+        block_width = feature.shape[1]//(2**l)
+        block_height = feature.shape[0]//(2**l)
+        row = 0
+        for block in range(2**(2*l)):
+            if block != 0 and block % (2**l) == 0:
+                row += 1
+                
+            # Grab features in the given block
+            block_features = feature[row * block_height: (row + 1) * block_height,
+                                     block % (2**l) * block_width: ((block % (2**l)) + 1) * block_width]
+            # Compute histogram of features within the block
+            block_features_flattened = block_features.reshape(block_features.shape[0] * block_features.shape[1],
+                                                              block_features.shape[2])
+            dist = np.linalg.norm(centroids-block_features_flattened[:,np.newaxis], axis = 2)
+            # assign each descriptor to the closest centroid based on this L2 norm value
+            labels = np.argmin(dist, axis=1)
+            
+            hist = np.zeros(centroids.shape[0])
+            for label_index in range(len(labels)):
+                hist[labels[label_index]] += 1
+            # Calculate the weight
+            if l == 0:
+                weight = 1/(2**L)
+            else:
+                weight = 1/(2**(L-l+1))
+            # Append the weighted histogram
+            hist = hist * weight
+            if len(concat_hist) == 0:
+                concat_hist = hist
+            else:
+                concat_hist = np.concatenate((concat_hist, hist), axis=None)
 
     # Normalize the histogram
+    concat_hist = concat_hist/np.sum(concat_hist)
 
-    return hist
+    return concat_hist
 
 
 ############## HOG #############################################################
@@ -87,8 +113,9 @@ def get_differential_filter():
         filter_x: (3, 3) numpy array
         filter_y: (3, 3) numpy array
     """
-    filter_x = None # YOUR CODE
-    filter_y = None # YOUR CODE
+    # Sobel Operators
+    filter_x = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]]) # YOUR CODE
+    filter_y = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]]) # YOUR CODE
     return filter_x, filter_y
 
 
@@ -106,6 +133,7 @@ def filter_image(im, filter):
     im_filtered = np.zeros((m, n))
 
     ### YOUR CODE ###
+    im = np.pad(im, 1)
 
     return im_filtered
 
