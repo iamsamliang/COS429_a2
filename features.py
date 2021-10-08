@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 
 ############## SIFT ############################################################
@@ -63,7 +64,7 @@ def spatial_pyramid_matching(L, feature, centroids):
     # For each level from 0, 1, ..., L
     concat_hist = []
     
-    for l in range(L + 1):
+    for l in range(L):
         # For each block
         block_width = feature.shape[1]//(2**l)
         block_height = feature.shape[0]//(2**l)
@@ -85,20 +86,26 @@ def spatial_pyramid_matching(L, feature, centroids):
             hist = np.zeros(centroids.shape[0])
             for label_index in range(len(labels)):
                 hist[labels[label_index]] += 1
+                
             # Calculate the weight
             if l == 0:
                 weight = 1/(2**L)
             else:
                 weight = 1/(2**(L-l+1))
+                
             # Append the weighted histogram
             hist = hist * weight
+
+            # Normalize the histogram
+#             hist = hist/np.sum(hist)
+            hist = (hist - np.mean(hist))/np.std(hist)
+            
             if len(concat_hist) == 0:
                 concat_hist = hist
             else:
                 concat_hist = np.concatenate((concat_hist, hist), axis=None)
 
-    # Normalize the histogram
-    concat_hist = concat_hist/np.sum(concat_hist)
+
 
     return concat_hist
 
@@ -133,7 +140,15 @@ def filter_image(im, filter):
     im_filtered = np.zeros((m, n))
 
     ### YOUR CODE ###
-    im = np.pad(im, 1)
+    img = deepcopy(im)
+    img = np.pad(img, 1)
+    for row in range(1, img.shape[0] - 1):
+        for col in range(1, img.shape[1] - 1):
+            for filt_x in range(-1, 2):
+                for filt_y in range(-1, 2):
+                    im_filtered[row - 1, col - 1] += img[row - filt_x, col - filt_y] * filter[filt_x + 1, filt_y + 1]
+                    
+#     res = cv2.filter2D(im, -1, -1 * filter, borderType=cv2.BORDER_CONSTANT)
 
     return im_filtered
 
