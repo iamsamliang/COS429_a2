@@ -20,8 +20,8 @@ def extract_sift(img, step_size=1):
     # Do we want them to be step_size apart vertically? Yes, bc each keypoint has a radius to it so we don't want them
     # to overlap
     dense_keypoints = []
-    for x in range(img.shape[0]):
-        for y in range(img.shape[1]):
+    for x in range(0, img.shape[0], step_size):
+        for y in range(0, img.shape[1], step_size):
             dense_keypoints.append(cv2.KeyPoint(x, y, step_size))
             
     # returns a tuple where the N x 128 descriptor is the second element. First element is some hex of the keypoints (unsure what)
