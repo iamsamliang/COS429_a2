@@ -64,7 +64,7 @@ def spatial_pyramid_matching(L, feature, centroids):
     # For each level from 0, 1, ..., L
     concat_hist = []
     
-    for l in range(L):
+    for l in range(L + 1):
         # For each block
         block_width = feature.shape[1]//(2**l)
         block_height = feature.shape[0]//(2**l)
