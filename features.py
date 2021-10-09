@@ -196,6 +196,7 @@ def get_block_descriptor(ori_histo, block_size):
     M, N, bins = ori_histo.shape
     e = 0.001
     ori_histo_normalized = np.zeros((M - block_size + 1, N - block_size + 1, bins * block_size * block_size))
+    ori_histo_unnormalized = np.zeros((M - block_size + 1, N - block_size + 1, bins * block_size * block_size))
     for i in range(M - block_size + 1):
         for j in range(N - block_size + 1):
             unnormalized = []
@@ -208,8 +209,10 @@ def get_block_descriptor(ori_histo, block_size):
             normalized = unnormalized / den
             for p in range(bins * block_size * block_size):
                 ori_histo_normalized[i][j][p] = normalized[p]
+                ori_histo_unnormalized[i][j][p] = unnormalized[p] # citing ed post #164
+                
 
-    return ori_histo_normalized
+    return ori_histo_normalized, ori_histo_unnormalized
 
 
 def extract_hog(im, cell_size, block_size, plot=False):
@@ -222,8 +225,9 @@ def extract_hog(im, cell_size, block_size, plot=False):
     im_dx, im_dy = filter_image(im, filter_x), filter_image(im, filter_y)
     grad_mag, grad_angle = get_gradient(im_dx, im_dy)
     ori_histo = build_histogram(grad_mag, grad_angle, cell_size)
-    ori_histo_normalized = get_block_descriptor(ori_histo, block_size)
-    hog = ori_histo_normalized.reshape((-1))
+    ori_histo_normalized, ori_histo_unnormalized = get_block_descriptor(ori_histo, block_size)
+    hog_unnormalized = ori_histo_unnormalized.reshape((-1))
+    hog_normalized = ori_histo_normalized.reshape((-1))
 
     if plot:
         # Plot the original image and HOG overlayed on it
@@ -231,7 +235,7 @@ def extract_hog(im, cell_size, block_size, plot=False):
         plt.subplot(121)
         plt.imshow(im, cmap='gray'); plt.axis('off')
         plt.subplot(122)
-        mesh_x, mesh_y, mesh_u, mesh_v, num_bins = visualize_hog(im, hog, cell_size, block_size)
+        mesh_x, mesh_y, mesh_u, mesh_v, num_bins = visualize_hog(im, hog_normalized, cell_size, block_size)
         plt.imshow(im, cmap='gray', vmin=0, vmax=1); plt.axis('off')
         for i in range(num_bins):
             plt.quiver(mesh_x - 0.5 * mesh_u[:, :, i], mesh_y - 0.5 * mesh_v[:, :, i], mesh_u[:, :, i], mesh_v[:, :, i],
@@ -250,7 +254,7 @@ def extract_hog(im, cell_size, block_size, plot=False):
         plt.imshow(grad_angle, cmap='hot', interpolation='nearest')
         plt.show()
 
-    return hog
+    return hog_unnormalized
 
 
 def visualize_hog(im, hog, cell_size, block_size):
